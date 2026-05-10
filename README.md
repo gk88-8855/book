@@ -1,67 +1,61 @@
-[README.md](https://github.com/user-attachments/files/27569184/README.md)
+[README.md](https://github.com/user-attachments/files/27569333/README.md)
 # BookTrack PWA
 
-แอปติดตามหนังสือ — สแกน ISBN, สุ่มหนังสือถัดไป, ใช้บน iPhone ได้
+A personal book tracker — scan ISBN barcodes, pick your next read, install on iPhone.
 
-## วิธีติดตั้งบน iPhone
+## Features
 
-### ตัวเลือก 1: Deploy ขึ้นเว็บ (แนะนำ)
+- **Library** — search, filter by status (want to read / reading / finished)
+- **ISBN barcode scanning** — uses your phone's camera, works on iOS Safari and Android Chrome
+- **Auto-fetch book data** — pulls title, author, page count, and cover image from Open Library + Google Books
+- **Reading progress** — track current page with progress bar
+- **Ratings & notes** — 1-5 stars and personal reviews
+- **Random picker** — randomly pick your next read from the "Want to read" list
+- **Offline support** — service worker caches files for offline use
+- **Export data** — download as JSON for backup
 
-PWA ต้องใช้ HTTPS เพื่อเข้าถึงกล้อง deploy ฟรีได้ที่:
+## Installation on iPhone
 
-**Netlify Drop (ง่ายสุด):**
-1. ไปที่ https://app.netlify.com/drop
-2. ลากโฟลเดอร์ทั้งหมดเข้าไป
-3. คัดลอก URL ที่ได้ (เช่น https://your-site.netlify.app)
+PWAs require HTTPS to access the camera. Deploy to one of these free services first:
 
-**GitHub Pages:**
-1. สร้าง repo ใหม่บน GitHub
-2. อัปโหลดไฟล์ทั้งหมด
-3. Settings → Pages → Source: main branch → Save
-4. รอ 1-2 นาที จะได้ URL: https://username.github.io/repo-name
+### Option 1: GitHub Pages
+1. Create a free account at github.com
+2. Create a new public repository (e.g. `booktrack`)
+3. Upload all the files from this folder (the contents inside, not the folder itself)
+4. Settings → Pages → Source: deploy from branch `main` → `/` (root) → Save
+5. Wait 1-2 minutes — your URL is `https://username.github.io/booktrack/`
 
-**Vercel:**
-1. ไปที่ https://vercel.com/new
-2. Import โปรเจกต์ หรือลากโฟลเดอร์
-3. Deploy
+### Option 2: Cloudflare Pages
+1. Sign up at cloudflare.com
+2. Workers & Pages → Create → Pages → Upload assets
+3. Drag the files in
+4. Done — URL is `https://your-project.pages.dev`
 
-### ตัวเลือก 2: Add to Home Screen (iPhone)
+### Option 3: Netlify Drop
+1. Go to https://app.netlify.com/drop
+2. Drag the folder in
+3. Done
 
-1. เปิด URL ที่ deploy ใน **Safari** (ต้อง Safari เท่านั้น ไม่ใช่ Chrome)
-2. กดปุ่ม **Share** (ไอคอนสี่เหลี่ยมพร้อมลูกศรชี้ขึ้น)
-3. เลื่อนลง → กด **Add to Home Screen**
-4. ตั้งชื่อ → กด **Add**
-5. ไอคอนแอปจะปรากฏที่หน้าจอหลักเหมือนแอปจริง
+### Add to Home Screen (iPhone)
+1. Open your URL in **Safari** (must be Safari, not Chrome)
+2. Tap the **Share** button (square with arrow up)
+3. Scroll down → **Add to Home Screen**
+4. Tap **Add**
+5. The icon appears on your home screen and launches like a real app
 
-## โครงสร้างไฟล์
+## Data storage
 
-```
-booktracker/
-├── index.html       # แอปหลัก
-├── manifest.json    # PWA manifest
-├── sw.js            # Service worker (ทำงาน offline)
-└── icons/
-    ├── icon-192.png
-    └── icon-512.png
-```
+All data is stored in your browser's `localStorage` — it persists between visits but is lost if you clear Safari data. Use the **Export** button (top-right) to save a JSON backup.
 
-## ฟีเจอร์
+## Notes
 
-- **คลังหนังสือ** — ค้นหา, กรองตามสถานะ (อยากอ่าน/กำลังอ่าน/อ่านแล้ว)
-- **สแกน ISBN** — ใช้กล้องสแกนบาร์โค้ดด้านหลังหนังสือ (รองรับ iOS Safari)
-- **ค้นหาอัตโนมัติ** — ดึงชื่อ/ผู้แต่ง/จำนวนหน้าจาก Open Library
-- **ติดตาม progress** — บันทึกหน้าที่อ่านถึง พร้อม progress bar
-- **ให้คะแนนและรีวิว** — ดาว 1-5 และโน้ตส่วนตัว
-- **สุ่มหนังสือ** — สุ่มหนังสือถัดไปจากรายการ "อยากอ่าน"
-- **ใช้ offline ได้** — Service worker cache ไฟล์ไว้
-- **Export ข้อมูล** — ดาวน์โหลดเป็น JSON สำรองได้
+- Camera scanning requires HTTPS (all the deploy options above provide it for free)
+- iOS Safari will ask for camera permission the first time
+- If scanning doesn't work, you can always enter the ISBN manually
+- Tested on iOS 16+ Safari and Android Chrome
 
-## ข้อมูล
+## Tech
 
-ข้อมูลเซฟใน `localStorage` ของเบราว์เซอร์ — ไม่หายเมื่อปิดแอป แต่ถ้าล้าง Safari data จะหาย ใช้ปุ่ม Export (ไอคอนซ้ายบน) สำรองได้
-
-## หมายเหตุ
-
-- ต้องใช้ HTTPS เท่านั้น (กล้องไม่ทำงานบน HTTP) — Netlify/Vercel/GitHub Pages ฟรีและให้ HTTPS อัตโนมัติ
-- iOS Safari ต้องการให้ผู้ใช้แตะเพื่อเริ่มกล้องครั้งแรก (อนุญาตการใช้กล้อง)
-- หากกล้องสแกนไม่ติด ให้พิมพ์ ISBN เองได้ที่ช่องด้านล่าง
+- Vanilla HTML/CSS/JS — no build step
+- [html5-qrcode](https://github.com/mebjas/html5-qrcode) for barcode scanning (works on iOS Safari)
+- [Open Library API](https://openlibrary.org/dev/docs/api/books) + [Google Books API](https://developers.google.com/books) for ISBN lookup
