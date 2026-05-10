@@ -1,1 +1,620 @@
-# book
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="BookTrack">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>BookTrack — ติดตามหนังสือ</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#fafaf7;--surface:#fff;--surface-2:#f3f1ec;
+  --text:#1a1a1a;--text-2:#666;--text-3:#999;
+  --border:rgba(0,0,0,.08);--border-2:rgba(0,0,0,.15);
+  --accent:#1a1a1a;--green:#0F6E56;--green-bg:#E1F5EE;
+  --blue:#185FA5;--blue-bg:#E6F1FB;--amber:#854F0B;--amber-bg:#FAEEDA;
+  --green-dark:#3B6D11;--green-dark-bg:#EAF3DE;
+  --radius:8px;--radius-lg:12px;
+  --safe-top:env(safe-area-inset-top);--safe-bot:env(safe-area-inset-bottom);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#1a1a1a;--surface:#262626;--surface-2:#2e2e2e;
+    --text:#f5f5f5;--text-2:#aaa;--text-3:#777;
+    --border:rgba(255,255,255,.1);--border-2:rgba(255,255,255,.2);
+    --accent:#f5f5f5;}
+}
+html,body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;-webkit-font-smoothing:antialiased;overscroll-behavior-y:contain}
+body{padding-top:var(--safe-top);padding-bottom:calc(64px + var(--safe-bot));min-height:100vh}
+.app{max-width:680px;margin:0 auto;padding:1rem}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;padding:.5rem 0}
+.app-title{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:1.25rem}
+.stat-card{background:var(--surface-2);border-radius:var(--radius);padding:10px 6px;text-align:center}
+.stat-num{font-size:20px;font-weight:600;display:block;line-height:1.2}
+.stat-label{font-size:11px;color:var(--text-2);margin-top:2px}
+.search-bar{position:relative;margin-bottom:.75rem}
+.search-bar input{padding-left:38px}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-2);pointer-events:none}
+input,select,textarea,button{font-family:inherit;font-size:15px;color:inherit}
+input[type=text],input[type=number],select,textarea{width:100%;padding:10px 12px;border:1px solid var(--border-2);border-radius:var(--radius);background:var(--surface);color:var(--text);outline:none;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+.filter-row{display:flex;gap:6px;margin-bottom:.75rem;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+.filter-row::-webkit-scrollbar{display:none}
+.filter-btn{padding:6px 14px;font-size:13px;border:1px solid var(--border-2);border-radius:20px;background:var(--surface);color:var(--text-2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.filter-btn.active{background:var(--accent);color:var(--bg);border-color:transparent}
+.book-list{display:flex;flex-direction:column;gap:8px}
+.book-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px;display:flex;gap:12px;align-items:flex-start}
+.book-cover{width:42px;height:58px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.book-info{flex:1;min-width:0}
+.book-title{font-size:15px;font-weight:500;line-height:1.3;word-break:break-word}
+.book-author{font-size:12px;color:var(--text-2);margin-top:2px}
+.book-meta{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.badge-reading{background:var(--green-bg);color:var(--green)}
+.badge-want{background:var(--blue-bg);color:var(--blue)}
+.badge-done{background:var(--green-dark-bg);color:var(--green-dark)}
+.progress-bar{height:4px;background:var(--surface-2);border-radius:2px;flex:1;overflow:hidden;min-width:50px;max-width:120px}
+.progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .3s}
+.progress-text{font-size:11px;color:var(--text-2)}
+.book-actions{display:flex;gap:2px;flex-shrink:0}
+.icon-btn{width:32px;height:32px;border:none;background:none;color:var(--text-2);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.icon-btn:active{background:var(--surface-2)}
+.section{display:none}.section.active{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.section-title{font-size:15px;font-weight:500;color:var(--text-2)}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--text-3);font-size:14px}
+.empty-state svg{margin:0 auto 12px;display:block;opacity:.5}
+
+/* Tab bar bottom (mobile-native style) */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:var(--safe-bot);z-index:50}
+.tab{flex:1;padding:10px 4px;border:none;background:none;color:var(--text-3);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:11px}
+.tab.active{color:var(--text)}
+.tab svg{width:24px;height:24px}
+
+/* FAB */
+.fab{position:fixed;right:1rem;bottom:calc(80px + var(--safe-bot));width:56px;height:56px;border-radius:50%;background:var(--accent);color:var(--bg);border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.15);cursor:pointer;z-index:40}
+.fab:active{transform:scale(.95)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
+.modal-overlay.open{display:flex;animation:fade .2s}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:1.25rem;padding-bottom:calc(1.25rem + var(--safe-bot));width:100%;max-width:680px;max-height:90vh;overflow-y:auto;animation:slideUp .25s}
+@media (min-width:680px){
+  .modal-overlay{align-items:center}
+  .modal{border-radius:var(--radius-lg);max-width:480px}
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--border-2);border-radius:2px;margin:0 auto 1rem}
+.modal-title{font-size:18px;font-weight:600;margin-bottom:1rem}
+.form-group{margin-bottom:14px}
+.form-label{font-size:13px;color:var(--text-2);margin-bottom:6px;display:block}
+.modal-actions{display:flex;gap:8px;margin-top:1.25rem}
+.btn{padding:12px 18px;border:1px solid var(--border-2);border-radius:var(--radius);background:var(--surface);color:var(--text);cursor:pointer;font-weight:500;flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn:active{background:var(--surface-2)}
+.btn-primary{background:var(--accent);color:var(--bg);border-color:transparent}
+.rating-stars{display:flex;gap:6px;font-size:24px}
+.star{color:var(--border-2);cursor:pointer;user-select:none}
+.star.filled{color:#EF9F27}
+
+/* Random tab */
+.random-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2rem 1.5rem;text-align:center;margin-bottom:1rem}
+.random-cover{width:80px;height:112px;border-radius:8px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:40px}
+.random-title{font-size:18px;font-weight:600;margin-bottom:4px;line-height:1.3}
+.random-author{font-size:14px;color:var(--text-2);margin-bottom:16px}
+.random-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+
+/* Scanner */
+#qr-reader{border-radius:var(--radius-lg);overflow:hidden;background:#000}
+#qr-reader video{border-radius:var(--radius-lg)}
+.scan-card{border:2px dashed var(--border-2);border-radius:var(--radius-lg);padding:2rem 1rem;text-align:center;margin-bottom:1rem;cursor:pointer}
+.scan-card svg{margin-bottom:8px;color:var(--text-2)}
+.note-box{background:var(--surface-2);border-radius:var(--radius);padding:10px 12px;font-size:13px;color:var(--text-2);margin-top:.75rem;display:flex;gap:8px;align-items:flex-start}
+
+/* Install prompt */
+.install-banner{background:var(--blue-bg);color:var(--blue);padding:10px 14px;border-radius:var(--radius);font-size:13px;margin-bottom:1rem;display:none;justify-content:space-between;align-items:center;gap:8px}
+.install-banner.show{display:flex}
+.install-banner button{background:none;border:none;color:inherit;font-weight:600;cursor:pointer;padding:4px 8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="app-title">📚 BookTrack</div>
+    <button class="icon-btn" onclick="exportData()" title="Export"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+  </div>
+
+  <div class="install-banner" id="installBanner">
+    <span>💡 เพิ่มแอปไว้ที่หน้าจอหลัก: กด <strong>Share → Add to Home Screen</strong></span>
+    <button onclick="document.getElementById('installBanner').classList.remove('show')">✕</button>
+  </div>
+
+  <div class="stats-grid" id="statsGrid"></div>
+
+  <!-- Library section -->
+  <div id="library" class="section active">
+    <div class="search-bar">
+      <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="ค้นหาชื่อหรือผู้แต่ง..." oninput="renderBookList()">
+    </div>
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">ทั้งหมด</button>
+      <button class="filter-btn" data-filter="reading" onclick="setFilter('reading',this)">กำลังอ่าน</button>
+      <button class="filter-btn" data-filter="want" onclick="setFilter('want',this)">อยากอ่าน</button>
+      <button class="filter-btn" data-filter="done" onclick="setFilter('done',this)">อ่านแล้ว</button>
+    </div>
+    <div class="book-list" id="bookList"></div>
+  </div>
+
+  <!-- Reading section -->
+  <div id="reading" class="section">
+    <div class="section-header"><span class="section-title">กำลังอ่านอยู่</span></div>
+    <div class="book-list" id="readingList"></div>
+  </div>
+
+  <!-- Random section -->
+  <div id="random" class="section">
+    <div class="section-header"><span class="section-title">สุ่มหนังสือถัดไป</span></div>
+    <div class="random-card" id="randomCard">
+      <div style="color:var(--text-2);font-size:14px;padding:1rem">กด "สุ่มเลย" เพื่อค้นหาหนังสือถัดไปจากรายการ "อยากอ่าน"</div>
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-primary" onclick="randomBook()" style="max-width:200px;margin:0 auto">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+        สุ่มเลย
+      </button>
+    </div>
+    <div class="note-box"><span>💡</span><span>สุ่มเฉพาะหนังสือในรายการ "อยากอ่าน"</span></div>
+  </div>
+
+  <!-- Scan section -->
+  <div id="scan" class="section">
+    <div class="section-header"><span class="section-title">สแกน ISBN</span></div>
+    <div class="scan-card" id="scanCard" onclick="startScan()">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <div style="font-weight:500;margin-bottom:4px">แตะเพื่อสแกนบาร์โค้ด</div>
+      <div style="font-size:13px;color:var(--text-2)">ชี้กล้องที่บาร์โค้ดด้านหลังหนังสือ</div>
+    </div>
+    <div id="qr-reader" style="display:none"></div>
+    <div id="scanButtons" style="display:none;text-align:center;margin-top:8px">
+      <button class="btn" onclick="stopScan()">ยกเลิกการสแกน</button>
+    </div>
+    <div style="margin-top:1rem">
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:6px">หรือพิมพ์ ISBN เอง</div>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="isbnInput" placeholder="เช่น 9780307474728" inputmode="numeric">
+        <button class="btn btn-primary" onclick="lookupISBN()" style="flex:0 0 auto;width:auto">ค้นหา</button>
+      </div>
+    </div>
+    <div id="isbnResult" style="margin-top:1rem"></div>
+    <div class="note-box"><span>📷</span><span>iOS Safari ต้องอนุญาตการใช้กล้องในครั้งแรก หากใช้ครั้งแรกแล้วไม่ได้ ลองรีเฟรชเพจ</span></div>
+  </div>
+</div>
+
+<button class="fab" onclick="openAddModal()" aria-label="เพิ่มหนังสือ">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- Bottom tab bar -->
+<nav class="tab-bar">
+  <button class="tab active" data-tab="library" onclick="switchTab('library')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+    <span>คลัง</span>
+  </button>
+  <button class="tab" data-tab="reading" onclick="switchTab('reading')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    <span>อ่านอยู่</span>
+  </button>
+  <button class="tab" data-tab="random" onclick="switchTab('random')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+    <span>สุ่ม</span>
+  </button>
+  <button class="tab" data-tab="scan" onclick="switchTab('scan')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 7v10M11 7v10M15 7v10M19 7v10" stroke-width="1"/></svg>
+    <span>สแกน</span>
+  </button>
+</nav>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="addModal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">เพิ่มหนังสือ</div>
+    <div class="form-group">
+      <label class="form-label">ชื่อเรื่อง *</label>
+      <input type="text" id="bookTitle">
+    </div>
+    <div class="form-group">
+      <label class="form-label">ผู้แต่ง</label>
+      <input type="text" id="bookAuthor">
+    </div>
+    <div class="form-group">
+      <label class="form-label">สถานะ</label>
+      <select id="bookStatus" onchange="updateProgressVis()">
+        <option value="want">อยากอ่าน</option>
+        <option value="reading">กำลังอ่าน</option>
+        <option value="done">อ่านแล้ว</option>
+      </select>
+    </div>
+    <div class="form-group" id="progressGroup" style="display:none">
+      <label class="form-label">หน้าปัจจุบัน / หน้าทั้งหมด</label>
+      <div style="display:flex;gap:8px">
+        <input type="number" id="currentPage" placeholder="0" min="0" inputmode="numeric">
+        <input type="number" id="totalPages" placeholder="0" min="0" inputmode="numeric">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">คะแนน</label>
+      <div class="rating-stars" id="ratingStars">
+        <span class="star" data-v="1">★</span><span class="star" data-v="2">★</span><span class="star" data-v="3">★</span><span class="star" data-v="4">★</span><span class="star" data-v="5">★</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">หมายเหตุ / รีวิวส่วนตัว</label>
+      <textarea id="bookNote" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ISBN</label>
+      <input type="text" id="bookISBN" inputmode="numeric">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveBook()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#5DCAA5','#85B7EB','#F0997B','#ED93B1','#97C459','#FAC775','#AFA9EC'];
+const ICONS=['📚','📖','🔬','💡','🌍','💰','🧠'];
+let books=[],editingId=null,currentRating=0,currentFilter='all',scanner=null;
+
+function loadBooks(){
+  try{books=JSON.parse(localStorage.getItem('booktrack_books')||'[]')}catch(e){books=[]}
+  if(!books.length){
+    books=[
+      {id:1,title:'Atomic Habits',author:'James Clear',status:'done',current:320,total:320,rating:5,note:'เปลี่ยนนิสัยได้จริง',isbn:'',color:COLORS[0],icon:ICONS[0]},
+      {id:2,title:'The Psychology of Money',author:'Morgan Housel',status:'reading',current:120,total:256,rating:0,note:'',isbn:'',color:COLORS[1],icon:ICONS[1]},
+      {id:3,title:'Sapiens',author:'Yuval Noah Harari',status:'want',current:0,total:443,rating:0,note:'',isbn:'',color:COLORS[2],icon:ICONS[2]},
+      {id:4,title:'Deep Work',author:'Cal Newport',status:'want',current:0,total:296,rating:0,note:'',isbn:'',color:COLORS[3],icon:ICONS[3]},
+    ];
+    saveBooks();
+  }
+}
+function saveBooks(){localStorage.setItem('booktrack_books',JSON.stringify(books));renderAll()}
+function renderAll(){renderStats();renderBookList();renderReadingList()}
+
+function renderStats(){
+  const total=books.length,reading=books.filter(b=>b.status==='reading').length,done=books.filter(b=>b.status==='done').length,want=books.filter(b=>b.status==='want').length;
+  document.getElementById('statsGrid').innerHTML=`
+    <div class="stat-card"><span class="stat-num">${total}</span><span class="stat-label">ทั้งหมด</span></div>
+    <div class="stat-card"><span class="stat-num" style="color:var(--green)">${reading}</span><span class="stat-label">กำลังอ่าน</span></div>
+    <div class="stat-card"><span class="stat-num" style="color:var(--blue)">${want}</span><span class="stat-label">อยากอ่าน</span></div>
+    <div class="stat-card"><span class="stat-num" style="color:var(--green-dark)">${done}</span><span class="stat-label">อ่านแล้ว</span></div>`;
+}
+function escHtml(s){return(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function bookCard(b){
+  const pct=b.total>0?Math.round((b.current/b.total)*100):0;
+  const badge={reading:'<span class="badge badge-reading">กำลังอ่าน</span>',want:'<span class="badge badge-want">อยากอ่าน</span>',done:'<span class="badge badge-done">อ่านแล้ว</span>'}[b.status];
+  const stars=b.rating?'★'.repeat(b.rating)+'☆'.repeat(5-b.rating):'';
+  const prog=b.status==='reading'&&b.total>0?`<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div><span class="progress-text">${pct}%</span>`:'';
+  return`<div class="book-card">
+    <div class="book-cover" style="background:${b.color}33">${b.icon||'📚'}</div>
+    <div class="book-info">
+      <div class="book-title">${escHtml(b.title)}</div>
+      <div class="book-author">${escHtml(b.author)||'—'}</div>
+      <div class="book-meta">${badge}${prog}${stars?`<span style="color:#EF9F27;font-size:12px">${stars}</span>`:''}</div>
+      ${b.note?`<div style="font-size:12px;color:var(--text-2);margin-top:6px;line-height:1.4">${escHtml(b.note)}</div>`:''}
+    </div>
+    <div class="book-actions">
+      <button class="icon-btn" onclick="editBook(${b.id})" aria-label="แก้ไข"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+      <button class="icon-btn" onclick="deleteBook(${b.id})" aria-label="ลบ"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+    </div>
+  </div>`;
+}
+function emptyState(text,icon){return`<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">${icon}</svg>${text}</div>`}
+function renderBookList(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  const list=books.filter(b=>{
+    const mf=currentFilter==='all'||b.status===currentFilter;
+    const ms=!q||b.title.toLowerCase().includes(q)||(b.author||'').toLowerCase().includes(q);
+    return mf&&ms;
+  });
+  document.getElementById('bookList').innerHTML=list.length?list.map(bookCard).join(''):emptyState('ยังไม่มีหนังสือ<br>กดปุ่ม + เพื่อเพิ่ม','<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>');
+}
+function renderReadingList(){
+  const list=books.filter(b=>b.status==='reading');
+  document.getElementById('readingList').innerHTML=list.length?list.map(bookCard).join(''):emptyState('ยังไม่มีหนังสือที่กำลังอ่าน','<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>');
+}
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(tab).classList.add('active');
+  if(tab!=='scan')stopScan();
+  window.scrollTo(0,0);
+}
+function setFilter(f,el){currentFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderBookList()}
+
+function openAddModal(){
+  editingId=null;currentRating=0;
+  ['bookTitle','bookAuthor','currentPage','totalPages','bookNote','bookISBN'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bookStatus').value='want';
+  document.getElementById('modalTitle').textContent='เพิ่มหนังสือ';
+  updateStars(0);updateProgressVis();
+  document.getElementById('addModal').classList.add('open');
+}
+function editBook(id){
+  const b=books.find(x=>x.id===id);if(!b)return;
+  editingId=id;currentRating=b.rating||0;
+  document.getElementById('modalTitle').textContent='แก้ไขหนังสือ';
+  document.getElementById('bookTitle').value=b.title;
+  document.getElementById('bookAuthor').value=b.author||'';
+  document.getElementById('bookStatus').value=b.status;
+  document.getElementById('currentPage').value=b.current||'';
+  document.getElementById('totalPages').value=b.total||'';
+  document.getElementById('bookNote').value=b.note||'';
+  document.getElementById('bookISBN').value=b.isbn||'';
+  updateStars(b.rating||0);updateProgressVis();
+  document.getElementById('addModal').classList.add('open');
+}
+function closeModal(){document.getElementById('addModal').classList.remove('open')}
+function saveBook(){
+  const title=document.getElementById('bookTitle').value.trim();
+  if(!title){alert('กรุณาใส่ชื่อหนังสือ');return}
+  const idx=Math.floor(Math.random()*COLORS.length);
+  const data={
+    title,
+    author:document.getElementById('bookAuthor').value.trim(),
+    status:document.getElementById('bookStatus').value,
+    current:parseInt(document.getElementById('currentPage').value)||0,
+    total:parseInt(document.getElementById('totalPages').value)||0,
+    rating:currentRating,
+    note:document.getElementById('bookNote').value.trim(),
+    isbn:document.getElementById('bookISBN').value.trim(),
+    color:COLORS[idx],icon:ICONS[idx],
+  };
+  if(editingId){const i=books.findIndex(b=>b.id===editingId);if(i>=0){data.id=editingId;data.color=books[i].color;data.icon=books[i].icon;books[i]=data}}
+  else{data.id=Date.now();books.push(data)}
+  saveBooks();closeModal();
+}
+function deleteBook(id){if(confirm('ลบหนังสือเล่มนี้?')){books=books.filter(b=>b.id!==id);saveBooks()}}
+function updateProgressVis(){document.getElementById('progressGroup').style.display=document.getElementById('bookStatus').value==='reading'?'block':'none'}
+function updateStars(n){document.querySelectorAll('#ratingStars .star').forEach(s=>s.classList.toggle('filled',parseInt(s.dataset.v)<=n))}
+document.getElementById('ratingStars').addEventListener('click',e=>{const v=e.target.dataset.v;if(v){currentRating=parseInt(v);updateStars(currentRating)}});
+
+function randomBook(){
+  const wantList=books.filter(b=>b.status==='want');
+  const card=document.getElementById('randomCard');
+  if(!wantList.length){card.innerHTML='<div style="color:var(--text-2);font-size:14px;padding:1rem">ยังไม่มีหนังสือในรายการ "อยากอ่าน"<br>เพิ่มหนังสือก่อนแล้วลองใหม่!</div>';return}
+  const b=wantList[Math.floor(Math.random()*wantList.length)];
+  card.innerHTML=`
+    <div class="random-cover" style="background:${b.color}33">${b.icon||'📚'}</div>
+    <div class="random-title">${escHtml(b.title)}</div>
+    <div class="random-author">${escHtml(b.author)||'—'}</div>
+    <div class="random-actions">
+      <button class="btn btn-primary" onclick="startReadingNow(${b.id})" style="max-width:160px">เริ่มอ่านเลย</button>
+      <button class="btn" onclick="randomBook()" style="max-width:120px">สุ่มใหม่</button>
+    </div>`;
+}
+function startReadingNow(id){const b=books.find(x=>x.id===id);if(b){b.status='reading';saveBooks();switchTab('reading')}}
+
+// ISBN scanning with html5-qrcode (works on iOS Safari)
+async function startScan(){
+  document.getElementById('scanCard').style.display='none';
+  document.getElementById('qr-reader').style.display='block';
+  document.getElementById('scanButtons').style.display='block';
+  scanner=new Html5Qrcode('qr-reader');
+  const config={fps:10,qrbox:{width:250,height:120},formatsToSupport:[
+    Html5QrcodeSupportedFormats.EAN_13,Html5QrcodeSupportedFormats.EAN_8,
+    Html5QrcodeSupportedFormats.UPC_A,Html5QrcodeSupportedFormats.UPC_E
+  ]};
+  try{
+    await scanner.start({facingMode:'environment'},config,
+      (decoded)=>{stopScan();document.getElementById('isbnInput').value=decoded;lookupISBN()},
+      ()=>{}
+    );
+  }catch(e){
+    alert('ไม่สามารถเข้าถึงกล้องได้\n\nกรุณา:\n1. อนุญาตการใช้กล้องในเบราว์เซอร์\n2. ใช้ Safari (iOS) หรือ Chrome\n3. ตรวจสอบว่าเปิดผ่าน HTTPS');
+    stopScan();
+  }
+}
+async function stopScan(){
+  if(scanner){try{await scanner.stop();await scanner.clear()}catch(e){}scanner=null}
+  document.getElementById('qr-reader').style.display='none';
+  document.getElementById('scanButtons').style.display='none';
+  document.getElementById('scanCard').style.display='block';
+}
+
+async function lookupISBN(){
+  const isbn=document.getElementById('isbnInput').value.trim().replace(/[-\s]/g,'');
+  if(!isbn)return;
+  const res=document.getElementById('isbnResult');
+  res.innerHTML='<div style="color:var(--text-2);font-size:14px;padding:8px">กำลังค้นหา...</div>';
+  try{
+    const r=await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`);
+    const d=await r.json();
+    const key=`ISBN:${isbn}`;
+    if(d[key]){
+      const book=d[key];
+      const title=book.title||'';
+      const author=book.authors?book.authors.map(a=>a.name).join(', '):'';
+      const pages=book.number_of_pages||0;
+      res.innerHTML=`<div class="book-card">
+        <div class="book-cover" style="background:#E1F5EE">📚</div>
+        <div class="book-info">
+          <div class="book-title">${escHtml(title)}</div>
+          <div class="book-author">${escHtml(author)}</div>
+          ${pages?`<div style="font-size:12px;color:var(--text-2);margin-top:4px">${pages} หน้า</div>`:''}
+        </div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:8px" onclick="addFromISBN(${JSON.stringify(isbn)},${JSON.stringify(title).replace(/"/g,'&quot;')},${JSON.stringify(author).replace(/"/g,'&quot;')},${pages})">+ เพิ่มลงคลัง</button>`;
+    }else{res.innerHTML='<div style="color:var(--text-2);font-size:14px;padding:8px">ไม่พบใน Open Library — ลองเพิ่มเองได้</div>'}
+  }catch(e){res.innerHTML='<div style="color:var(--text-2);font-size:14px;padding:8px">เชื่อมต่อไม่ได้</div>'}
+}
+function addFromISBN(isbn,title,author,pages){
+  const idx=Math.floor(Math.random()*COLORS.length);
+  books.push({id:Date.now(),title,author,status:'want',current:0,total:pages,rating:0,note:'',isbn,color:COLORS[idx],icon:ICONS[idx]});
+  saveBooks();
+  document.getElementById('isbnResult').innerHTML='<div style="color:var(--green);font-size:14px;padding:8px">✓ เพิ่มเรียบร้อยแล้ว</div>';
+  document.getElementById('isbnInput').value='';
+  setTimeout(()=>switchTab('library'),800);
+}
+
+function exportData(){
+  const data=JSON.stringify(books,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`booktrack-${new Date().toISOString().slice(0,10)}.json`;a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Show iOS install hint if launched from Safari (not standalone)
+function checkInstallHint(){
+  const isIOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+  const isStandalone=window.navigator.standalone;
+  const dismissed=localStorage.getItem('install_dismissed');
+  if(isIOS&&!isStandalone&&!dismissed){
+    document.getElementById('installBanner').classList.add('show');
+  }
+}
+
+// Service worker for offline support
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})});
+}
+
+loadBooks();renderAll();checkInstallHint();
+</script>
+</body>
+</html>
+
+{
+  "name": "BookTrack — ติดตามหนังสือ",
+  "short_name": "BookTrack",
+  "description": "แอปติดตามหนังสือส่วนตัว สแกน ISBN และสุ่มหนังสือถัดไป",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf7",
+  "theme_color": "#ffffff",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+
+# BookTrack PWA
+
+แอปติดตามหนังสือ — สแกน ISBN, สุ่มหนังสือถัดไป, ใช้บน iPhone ได้
+
+## วิธีติดตั้งบน iPhone
+
+### ตัวเลือก 1: Deploy ขึ้นเว็บ (แนะนำ)
+
+PWA ต้องใช้ HTTPS เพื่อเข้าถึงกล้อง deploy ฟรีได้ที่:
+
+**Netlify Drop (ง่ายสุด):**
+1. ไปที่ https://app.netlify.com/drop
+2. ลากโฟลเดอร์ทั้งหมดเข้าไป
+3. คัดลอก URL ที่ได้ (เช่น https://your-site.netlify.app)
+
+**GitHub Pages:**
+1. สร้าง repo ใหม่บน GitHub
+2. อัปโหลดไฟล์ทั้งหมด
+3. Settings → Pages → Source: main branch → Save
+4. รอ 1-2 นาที จะได้ URL: https://username.github.io/repo-name
+
+**Vercel:**
+1. ไปที่ https://vercel.com/new
+2. Import โปรเจกต์ หรือลากโฟลเดอร์
+3. Deploy
+
+### ตัวเลือก 2: Add to Home Screen (iPhone)
+
+1. เปิด URL ที่ deploy ใน **Safari** (ต้อง Safari เท่านั้น ไม่ใช่ Chrome)
+2. กดปุ่ม **Share** (ไอคอนสี่เหลี่ยมพร้อมลูกศรชี้ขึ้น)
+3. เลื่อนลง → กด **Add to Home Screen**
+4. ตั้งชื่อ → กด **Add**
+5. ไอคอนแอปจะปรากฏที่หน้าจอหลักเหมือนแอปจริง
+
+## โครงสร้างไฟล์
+
+```
+booktracker/
+├── index.html       # แอปหลัก
+├── manifest.json    # PWA manifest
+├── sw.js            # Service worker (ทำงาน offline)
+└── icons/
+    ├── icon-192.png
+    └── icon-512.png
+```
+
+## ฟีเจอร์
+
+- **คลังหนังสือ** — ค้นหา, กรองตามสถานะ (อยากอ่าน/กำลังอ่าน/อ่านแล้ว)
+- **สแกน ISBN** — ใช้กล้องสแกนบาร์โค้ดด้านหลังหนังสือ (รองรับ iOS Safari)
+- **ค้นหาอัตโนมัติ** — ดึงชื่อ/ผู้แต่ง/จำนวนหน้าจาก Open Library
+- **ติดตาม progress** — บันทึกหน้าที่อ่านถึง พร้อม progress bar
+- **ให้คะแนนและรีวิว** — ดาว 1-5 และโน้ตส่วนตัว
+- **สุ่มหนังสือ** — สุ่มหนังสือถัดไปจากรายการ "อยากอ่าน"
+- **ใช้ offline ได้** — Service worker cache ไฟล์ไว้
+- **Export ข้อมูล** — ดาวน์โหลดเป็น JSON สำรองได้
+
+## ข้อมูล
+
+ข้อมูลเซฟใน `localStorage` ของเบราว์เซอร์ — ไม่หายเมื่อปิดแอป แต่ถ้าล้าง Safari data จะหาย ใช้ปุ่ม Export (ไอคอนซ้ายบน) สำรองได้
+
+## หมายเหตุ
+
+- ต้องใช้ HTTPS เท่านั้น (กล้องไม่ทำงานบน HTTP) — Netlify/Vercel/GitHub Pages ฟรีและให้ HTTPS อัตโนมัติ
+- iOS Safari ต้องการให้ผู้ใช้แตะเพื่อเริ่มกล้องครั้งแรก (อนุญาตการใช้กล้อง)
+- หากกล้องสแกนไม่ติด ให้พิมพ์ ISBN เองได้ที่ช่องด้านล่าง
+
+const CACHE='booktrack-v1';
+const ASSETS=['./','./index.html','./manifest.json','./icons/icon-192.png','./icons/icon-512.png','https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'];
+
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})));
+  self.skipWaiting();
+});
+
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+
+self.addEventListener('fetch',e=>{
+  // Skip non-GET requests and Open Library API calls (need fresh data)
+  if(e.request.method!=='GET'||e.request.url.includes('openlibrary.org'))return;
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      const fetchPromise=fetch(e.request).then(response=>{
+        if(response&&response.status===200){
+          const clone=response.clone();
+          caches.open(CACHE).then(c=>c.put(e.request,clone)).catch(()=>{});
+        }
+        return response;
+      }).catch(()=>cached);
+      return cached||fetchPromise;
+    })
+  );
+});
